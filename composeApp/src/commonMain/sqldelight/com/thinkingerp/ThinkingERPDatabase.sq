@@ -1,0 +1,148 @@
+-- Items / Product Master
+CREATE TABLE IF NOT EXISTS items (
+    barcode TEXT NOT NULL PRIMARY KEY,  -- UPC-A 12-digit
+    name TEXT NOT NULL,
+    company TEXT NOT NULL,
+    mrp REAL NOT NULL,
+    hsn_code TEXT NOT NULL DEFAULT '',
+    gst_rate REAL NOT NULL DEFAULT 18.0,  -- 0, 5, 12, 18, 28
+    quantity INTEGER NOT NULL DEFAULT 0,
+    unit TEXT NOT NULL DEFAULT 'PCS',
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+-- Purchase Bills (GRN)
+CREATE TABLE IF NOT EXISTS purchase_bills (
+    id TEXT NOT NULL PRIMARY KEY,
+    bill_number TEXT NOT NULL,
+    bill_date INTEGER NOT NULL,
+    supplier_name TEXT NOT NULL,
+    supplier_gstin TEXT NOT NULL DEFAULT '',
+    subtotal REAL NOT NULL,
+    cgst REAL NOT NULL DEFAULT 0.0,
+    sgst REAL NOT NULL DEFAULT 0.0,
+    igst REAL NOT NULL DEFAULT 0.0,
+    total REAL NOT NULL,
+    is_inter_state INTEGER NOT NULL DEFAULT 0,  -- 0=intra(CGST+SGST), 1=inter(IGST)
+    notes TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS purchase_bill_items (
+    id TEXT NOT NULL PRIMARY KEY,
+    bill_id TEXT NOT NULL,
+    barcode TEXT NOT NULL,
+    item_name TEXT NOT NULL,
+    quantity INTEGER NOT NULL,
+    purchase_price REAL NOT NULL,
+    mrp REAL NOT NULL,
+    gst_rate REAL NOT NULL,
+    cgst REAL NOT NULL DEFAULT 0.0,
+    sgst REAL NOT NULL DEFAULT 0.0,
+    igst REAL NOT NULL DEFAULT 0.0,
+    line_total REAL NOT NULL,
+    FOREIGN KEY (bill_id) REFERENCES purchase_bills(id)
+);
+
+-- Sell Invoices
+CREATE TABLE IF NOT EXISTS sell_invoices (
+    id TEXT NOT NULL PRIMARY KEY,
+    invoice_number TEXT NOT NULL,
+    invoice_date INTEGER NOT NULL,
+    customer_name TEXT NOT NULL DEFAULT 'Cash',
+    customer_gstin TEXT NOT NULL DEFAULT '',
+    subtotal REAL NOT NULL,
+    cgst REAL NOT NULL DEFAULT 0.0,
+    sgst REAL NOT NULL DEFAULT 0.0,
+    igst REAL NOT NULL DEFAULT 0.0,
+    total REAL NOT NULL,
+    is_inter_state INTEGER NOT NULL DEFAULT 0,
+    notes TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS sell_invoice_items (
+    id TEXT NOT NULL PRIMARY KEY,
+    invoice_id TEXT NOT NULL,
+    barcode TEXT NOT NULL,
+    item_name TEXT NOT NULL,
+    quantity INTEGER NOT NULL,
+    sell_price REAL NOT NULL,
+    mrp REAL NOT NULL,
+    gst_rate REAL NOT NULL,
+    cgst REAL NOT NULL DEFAULT 0.0,
+    sgst REAL NOT NULL DEFAULT 0.0,
+    igst REAL NOT NULL DEFAULT 0.0,
+    line_total REAL NOT NULL,
+    FOREIGN KEY (invoice_id) REFERENCES sell_invoices(id)
+);
+
+-- Store Settings
+CREATE TABLE IF NOT EXISTS store_settings (
+    key TEXT NOT NULL PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
+-- ─── Queries ─────────────────────────────────────────────────────────────────
+
+-- Items
+getItemByBarcode:
+SELECT * FROM items WHERE barcode = ?;
+
+searchItems:
+SELECT * FROM items WHERE name LIKE '%' || :query || '%' OR barcode LIKE '%' || :query || '%'
+ORDER BY name ASC LIMIT 100;
+
+getAllItems:
+SELECT * FROM items ORDER BY name ASC;
+
+getLowStockItems:
+SELECT * FROM items WHERE quantity <= :threshold ORDER BY quantity ASC;
+
+upsertItem:
+INSERT OR REPLACE INTO items(barcode, name, company, mrp, hsn_code, gst_rate, quantity, unit, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateItemQuantity:
+UPDATE items SET quantity = quantity + :delta, updated_at = :updatedAt WHERE barcode = :barcode;
+
+getTotalItemCount:
+SELECT COUNT(*) FROM items;
+
+-- Purchase Bills
+insertPurchaseBill:
+INSERT INTO purchase_bills(id, bill_number, bill_date, supplier_name, supplier_gstin, subtotal, cgst, sgst, igst, total, is_inter_state, notes, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+insertPurchaseBillItem:
+INSERT INTO purchase_bill_items(id, bill_id, barcode, item_name, quantity, purchase_price, mrp, gst_rate, cgst, sgst, igst, line_total)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getPurchaseBillsRecent:
+SELECT * FROM purchase_bills ORDER BY bill_date DESC LIMIT :limit;
+
+getPurchaseBillItems:
+SELECT * FROM purchase_bill_items WHERE bill_id = ?;
+
+-- Sell Invoices
+insertSellInvoice:
+INSERT INTO sell_invoices(id, invoice_number, invoice_date, customer_name, customer_gstin, subtotal, cgst, sgst, igst, total, is_inter_state, notes, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+insertSellInvoiceItem:
+INSERT INTO sell_invoice_items(id, invoice_id, barcode, item_name, quantity, sell_price, mrp, gst_rate, cgst, sgst, igst, line_total)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getSellInvoicesRecent:
+SELECT * FROM sell_invoices ORDER BY invoice_date DESC LIMIT :limit;
+
+getSellInvoiceItems:
+SELECT * FROM sell_invoice_items WHERE invoice_id = ?;
+
+-- Settings
+getSetting:
+SELECT value FROM store_settings WHERE key = ?;
+
+upsertSetting:
+INSERT OR REPLACE INTO store_settings(key, value) VALUES (?, ?);
