@@ -15,10 +15,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val db = ThinkingERPDatabase(DatabaseFactory(this).createDriver())
+        val driver = DatabaseFactory(this).createDriver()
+        val db = ThinkingERPDatabase(driver)
         val repo = InventoryRepository(db)
         DataSeeder.seed(repo)
-        val container = AppContainer(repo)
+        val container = AppContainer(repo, driver)
 
         setContent {
             CompositionLocalProvider(LocalAppContainer provides container) {

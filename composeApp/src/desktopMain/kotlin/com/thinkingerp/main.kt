@@ -11,10 +11,11 @@ import com.thinkingerp.data.database.ThinkingERPDatabase
 import com.thinkingerp.data.repository.InventoryRepository
 
 fun main() {
-    val db = ThinkingERPDatabase(DatabaseFactory().createDriver())
+    val driver = DatabaseFactory().createDriver()
+    val db = ThinkingERPDatabase(driver)
     val repo = InventoryRepository(db)
     DataSeeder.seed(repo)
-    val container = AppContainer(repo)
+    val container = AppContainer(repo, driver)
 
     application {
         Window(

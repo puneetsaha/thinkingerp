@@ -45,9 +45,9 @@ fun PurchaseBillScreen(onBack: () -> Unit) {
                 actions = {
                     Button(
                         onClick = { vm.saveBill() },
-                        enabled = state.lines.isNotEmpty(),
+                        enabled = state.lines.isNotEmpty() && !state.isLoading,
                         modifier = Modifier.padding(end = 8.dp),
-                    ) { Text("Save Bill") }
+                    ) { Text(if (state.isLoading) "Saving..." else "Save Bill") }
                 }
             )
         }

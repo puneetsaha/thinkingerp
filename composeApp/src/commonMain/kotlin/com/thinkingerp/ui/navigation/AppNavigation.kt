@@ -8,12 +8,14 @@ import com.thinkingerp.ui.screens.dashboard.DashboardScreen
 import com.thinkingerp.ui.screens.purchase.PurchaseBillScreen
 import com.thinkingerp.ui.screens.query.NaturalLanguageQueryScreen
 import com.thinkingerp.ui.screens.sell.SellInvoiceScreen
+import com.thinkingerp.ui.screens.settings.SettingsScreen
 
 sealed class Screen(val route: String) {
     data object Dashboard : Screen("dashboard")
     data object PurchaseBill : Screen("purchase_bill")
     data object SellInvoice : Screen("sell_invoice")
     data object Query : Screen("query")
+    data object Settings : Screen("settings")
 }
 
 @Composable
@@ -25,6 +27,7 @@ fun AppNavigation() {
                 onNavigateToPurchase = { navController.navigate(Screen.PurchaseBill.route) },
                 onNavigateToSell = { navController.navigate(Screen.SellInvoice.route) },
                 onNavigateToQuery = { navController.navigate(Screen.Query.route) },
+                onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
             )
         }
         composable(Screen.PurchaseBill.route) {
@@ -35,6 +38,9 @@ fun AppNavigation() {
         }
         composable(Screen.Query.route) {
             NaturalLanguageQueryScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Screen.Settings.route) {
+            SettingsScreen(onBack = { navController.popBackStack() })
         }
     }
 }

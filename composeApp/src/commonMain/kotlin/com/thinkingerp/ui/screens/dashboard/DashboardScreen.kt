@@ -12,6 +12,7 @@ fun DashboardScreen(
     onNavigateToPurchase: () -> Unit,
     onNavigateToSell: () -> Unit,
     onNavigateToQuery: () -> Unit,
+    onNavigateToSettings: () -> Unit,
 ) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -33,6 +34,11 @@ fun DashboardScreen(
 
         OutlinedButton(onClick = onNavigateToQuery, modifier = Modifier.fillMaxWidth()) {
             Text("Ask Inventory (AI)")
+        }
+        Spacer(Modifier.height(16.dp))
+
+        TextButton(onClick = onNavigateToSettings, modifier = Modifier.fillMaxWidth()) {
+            Text("Settings")
         }
     }
 }
